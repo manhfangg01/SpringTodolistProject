@@ -21,12 +21,12 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(c -> c.disable()) // Disable CSRF for stateless (e.g. OAuth2)
+                .csrf(c -> c.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/", "/api/users", "/login").permitAll()
-                        .anyRequest().authenticated()) // Authenticate all other requests
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // Stateless
-                                                                                                               // session
+                        .requestMatchers("/", "/api/users", "/login", "/register").permitAll()
+                        .anyRequest().authenticated())
+                .formLogin(f -> f.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();
     }
 }

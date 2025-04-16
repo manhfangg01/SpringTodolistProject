@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.config.authentication.PasswordEncoderParser;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,9 +19,11 @@ import com.example.Todolist.service.UserService;
 @RestController
 public class AuthController {
     private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, PasswordEncoder passwordEncoder) {
         this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
 
     }
 
@@ -45,7 +49,7 @@ public class AuthController {
             tempUser.setEmail(realUser.getEmail());
             tempUser.setFullName(realUser.getFullName());
             tempUser.setId(realUser.getId());
-            if (realUser.getPassword().equals(loginDTO.getPassword())) {
+            if (passwordEncoder.matches(loginDTO.getPassword(), realUser.getPassword())) {
                 response.setStatusCode(HttpStatus.OK.value());
                 response.setMessage("Bạn đã đăng nhập thành công");
                 response.setError(null);
