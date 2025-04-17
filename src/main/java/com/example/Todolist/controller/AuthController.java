@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.config.authentication.PasswordEncoderParser;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,15 +14,18 @@ import com.example.Todolist.domain.User;
 import com.example.Todolist.domain.UserResponse;
 import com.example.Todolist.domain.dto.LoginDTO;
 import com.example.Todolist.service.UserService;
+import com.example.Todolist.util.SecurityUtil;
 
 @RestController
 public class AuthController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final SecurityUtil securityUtil;
 
-    public AuthController(UserService userService, PasswordEncoder passwordEncoder) {
+    public AuthController(UserService userService, PasswordEncoder passwordEncoder, SecurityUtil securityUtil) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.securityUtil = securityUtil;
 
     }
 
@@ -40,8 +42,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<RestResponse<UserResponse>> LoginUser(@RequestBody LoginDTO loginDTO) {
-        RestResponse<UserResponse> response = new RestResponse<UserResponse>();
+    public ResponseEntity<RestResponse<String>> LoginUser(@RequestBody LoginDTO loginDTO) {
+        RestResponse<String> response = new RestResponse<String>();
         Optional<User> loginUser = this.userService.handleFetchUserByEmail(loginDTO.getUsername());
         if (loginUser.isPresent()) {
             User realUser = loginUser.get();
@@ -50,10 +52,11 @@ public class AuthController {
             tempUser.setFullName(realUser.getFullName());
             tempUser.setId(realUser.getId());
             if (passwordEncoder.matches(loginDTO.getPassword(), realUser.getPassword())) {
+                String accessToken = securityUtil.createToken(realUser);
                 response.setStatusCode(HttpStatus.OK.value());
                 response.setMessage("Bạn đã đăng nhập thành công");
                 response.setError(null);
-                response.setData(tempUser);
+                response.setData(accessToken);
                 return ResponseEntity.ok(response);
             }
         }
