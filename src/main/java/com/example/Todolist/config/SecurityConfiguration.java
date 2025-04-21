@@ -3,6 +3,7 @@ package com.example.Todolist.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -27,10 +28,12 @@ public class SecurityConfiguration {
                 .csrf(c -> c.disable())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/", "/api/users", "/login", "/register").permitAll()
-                        .anyRequest().authenticated())
+                        .anyRequest()
+                        .authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults())) // Đây
+                // là nơi bật filter JWT
                 .formLogin(f -> f.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();
     }
-
 }

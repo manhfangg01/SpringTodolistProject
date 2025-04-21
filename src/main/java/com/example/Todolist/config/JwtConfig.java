@@ -14,22 +14,25 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
+import com.example.Todolist.util.SecurityUtil;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
 @Configuration
 public class JwtConfig {
-
     @Value("${hoidanit.jwt.base64-secret}")
     private String jwtKey;
+
+    private SecretKey getSecretKey() {
+        byte[] keyBytes = Base64.getDecoder().decode(jwtKey);
+        return new SecretKeySpec(keyBytes, "HmacSHA512");
+    }
 
     /**
      * Bean dùng để mã hóa JWT (tạo token)
      */
     @Bean
     public JwtEncoder jwtEncoder() {
-        byte[] decodedKey = Base64.getDecoder().decode(jwtKey);
-        SecretKey secretKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "HmacSHA512");
-        return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey));
+        return new NimbusJwtEncoder(new ImmutableSecret<>(getSecretKey()));
     }
 
     /**
@@ -37,10 +40,16 @@ public class JwtConfig {
      */
     @Bean
     public JwtDecoder jwtDecoder() {
-        byte[] decodedKey = Base64.getDecoder().decode(jwtKey);
-        SecretKey secretKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "HmacSHA512");
-        return NimbusJwtDecoder.withSecretKey(secretKey)
-                .macAlgorithm(MacAlgorithm.HS512)
-                .build();
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(
+                getSecretKey()).macAlgorithm(SecurityUtil.JWT_ALGORITHM).build();
+        return token -> {
+            try {
+                return jwtDecoder.decode(token);
+            } catch (Exception e) {
+                System.out.println(">>> JWT error: " + e.getMessage());
+                throw e;
+            }
+        };
     }
+
 }

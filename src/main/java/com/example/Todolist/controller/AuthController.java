@@ -9,9 +9,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.Todolist.domain.RestResponse;
+import com.example.Todolist.domain.Token;
 import com.example.Todolist.domain.User;
-import com.example.Todolist.domain.UserResponse;
 import com.example.Todolist.domain.dto.LoginDTO;
 import com.example.Todolist.service.UserService;
 import com.example.Todolist.util.SecurityUtil;
@@ -26,44 +25,29 @@ public class AuthController {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.securityUtil = securityUtil;
-
     }
 
     @PostMapping("/register")
-    public ResponseEntity<RestResponse<User>> CreateNewUser(@RequestBody User user) {
-        RestResponse<User> response = new RestResponse<User>();
-        response.setStatusCode(HttpStatus.OK.value());
-        response.setData(user);
-        response.setMessage("Lưu người dùng mới thành công");
-        response.setError(null);
-
+    public User createNewUser(@RequestBody User user) {
         this.userService.handleSaveUser(user);
-        return ResponseEntity.ok(response);
+        return user; // Spring sẽ wrap lại thành RestResponse<User> qua FormatRestResponse
     }
 
     @PostMapping("/login")
-    public ResponseEntity<RestResponse<String>> LoginUser(@RequestBody LoginDTO loginDTO) {
-        RestResponse<String> response = new RestResponse<String>();
-        Optional<User> loginUser = this.userService.handleFetchUserByEmail(loginDTO.getUsername());
+    public ResponseEntity<?> loginUser(@RequestBody LoginDTO loginDTO) {
+        Optional<User> loginUser = userService.handleFetchUserByEmail(loginDTO.getUsername());
+
         if (loginUser.isPresent()) {
             User realUser = loginUser.get();
-            UserResponse tempUser = new UserResponse();
-            tempUser.setEmail(realUser.getEmail());
-            tempUser.setFullName(realUser.getFullName());
-            tempUser.setId(realUser.getId());
             if (passwordEncoder.matches(loginDTO.getPassword(), realUser.getPassword())) {
-                String accessToken = securityUtil.createToken(realUser);
-                response.setStatusCode(HttpStatus.OK.value());
-                response.setMessage("Bạn đã đăng nhập thành công");
-                response.setError(null);
-                response.setData(accessToken);
-                return ResponseEntity.ok(response);
+                String accessToken = securityUtil.createToken(realUser, securityUtil.getJwtExpiration());
+                String refreshToken = securityUtil.createToken(realUser, securityUtil.getRefreshExpiration());
+
+                return ResponseEntity.ok(new Token(accessToken, refreshToken));
             }
         }
-        response.setStatusCode(HttpStatus.UNAUTHORIZED.value());
-        response.setMessage("Rất tiếc! Đăng nhập thất bại");
-        response.setError("UNAUTHORIZED");
-        response.setData(null);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("Tên đăng nhập hoặc mật khẩu không đúng");
     }
 }

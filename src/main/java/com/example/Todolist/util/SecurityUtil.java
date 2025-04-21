@@ -31,9 +31,28 @@ public class SecurityUtil {
     @Value("${hoidanit.jwt.token-validity-in-seconds}")
     private long jwtExpiration;
 
+    @Value("${hoidanit.jwt.RefreshToken-validity-in-seconds}")
+    private long RefreshExpiration;
+
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS512;
 
     private final JwtEncoder jwtEncoder;
+
+    public long getJwtExpiration() {
+        return jwtExpiration;
+    }
+
+    public void setJwtExpiration(long jwtExpiration) {
+        this.jwtExpiration = jwtExpiration;
+    }
+
+    public long getRefreshExpiration() {
+        return RefreshExpiration;
+    }
+
+    public void setRefreshExpiration(long refreshExpiration) {
+        RefreshExpiration = refreshExpiration;
+    }
 
     // Thêm constructor nhận vào JwtEncoder
     public SecurityUtil(JwtEncoder jwtEncoder) {
@@ -41,15 +60,16 @@ public class SecurityUtil {
     }
 
     // Tạo token
-    public String createToken(User user) {
+    public String createToken(User user, long expiration) {
         Instant now = Instant.now();
-        Instant validity = now.plus(this.jwtExpiration, ChronoUnit.SECONDS);
+        Instant validity = now.plus(expiration, ChronoUnit.SECONDS);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
-                .subject(user.getEmail())
-                .claim("manh", user)
+                .subject(user.getEmail()) // subject là email
+                .claim("id", user.getId())
+                .claim("fullName", user.getFullName())
                 .build();
 
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();

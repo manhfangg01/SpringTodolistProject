@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.Todolist.domain.RestResponse;
 import com.example.Todolist.domain.User;
 import com.example.Todolist.service.UserService;
+import com.example.Todolist.service.error.IdInvalidException;
 
 @RestController
 public class UserController {
@@ -40,9 +41,12 @@ public class UserController {
     }
 
     @GetMapping("/user/{id}")
-    public ResponseEntity<RestResponse<User>> getSpecificUser(@PathVariable("id") long id) {
+    public ResponseEntity<RestResponse<User>> getSpecificUser(@PathVariable("id") String id) throws IdInvalidException {
+        if (!id.matches("\\d+")) {
+            throw new IdInvalidException("Out of bound");
+        }
         RestResponse<User> response = new RestResponse<User>();
-        Optional<User> checkUser = this.userService.handleFetchUser(id);
+        Optional<User> checkUser = this.userService.handleFetchUser(Integer.parseInt(id));
         if (checkUser.isPresent()) {
             response.setStatusCode(HttpStatus.OK.value());
             response.setData(checkUser.get());
@@ -56,6 +60,7 @@ public class UserController {
             response.setMessage("Không có người dùng " + id + " trong hệ thống");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+
     }
 
 }
