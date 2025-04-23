@@ -35,4 +35,8 @@ public class UserService {
     public Optional<User> handleFetchUser(long id) {
         return this.userRepository.findById(id);
     }
+
+    public Optional<User> handleGetUserByUserName(String username) {
+        return this.userRepository.findByEmail(username);
+    }
 }

@@ -1,26 +1,15 @@
 package com.example.Todolist.util;
 
-import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.stereotype.Service;
-
-import com.example.Todolist.domain.User;
 
 @Service
 public class SecurityUtil {
@@ -60,16 +49,15 @@ public class SecurityUtil {
     }
 
     // Tạo token
-    public String createToken(User user, long expiration) {
+    public String createToken(Authentication authentication) {
         Instant now = Instant.now();
-        Instant validity = now.plus(expiration, ChronoUnit.SECONDS);
+        Instant validity = now.plus(jwtExpiration, ChronoUnit.SECONDS);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
-                .subject(user.getEmail()) // subject là email
-                .claim("id", user.getId())
-                .claim("fullName", user.getFullName())
+                .subject(authentication.getName())
+                .claim("hoidanit", authentication)
                 .build();
 
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
