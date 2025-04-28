@@ -1,11 +1,17 @@
 package com.example.Todolist.domain;
 
+import java.time.Instant;
+
+import com.example.Todolist.util.SecurityUtil;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,7 +22,10 @@ public class Todolist {
     private long id;
     private String title;
     private String status;
-    private String createAt;
+    private Instant createAt;
+    private String createBy;
+    private Instant UpdateAt;
+    private String UpdateBy;
 
     @ManyToOne
     @JoinColumn(name = "userID")
@@ -46,12 +55,54 @@ public class Todolist {
         this.status = status;
     }
 
-    public String getCreateAt() {
+    // call-back function handle after todolist creating
+
+    @PrePersist
+    public void handleAfterCreatingTodolist() {
+        this.createBy = SecurityUtil.getCurrentUserLogin().isPresent() == true
+                ? SecurityUtil.getCurrentUserLogin().get()
+                : "?";
+        this.createAt = Instant.now();
+    }
+
+    @PreUpdate
+    public void handleAfterUpdatingTodolist() {
+        this.UpdateBy = SecurityUtil.getCurrentUserLogin().isPresent() == true
+                ? SecurityUtil.getCurrentUserLogin().get()
+                : "?";
+        this.UpdateAt = Instant.now();
+    }
+
+    public Instant getCreateAt() {
         return createAt;
     }
 
-    public void setCreateAt(String createAt) {
+    public void setCreateAt(Instant createAt) {
         this.createAt = createAt;
+    }
+
+    public String getCreateBy() {
+        return createBy;
+    }
+
+    public void setCreateBy(String createBy) {
+        this.createBy = createBy;
+    }
+
+    public Instant getUpdateAt() {
+        return UpdateAt;
+    }
+
+    public void setUpdateAt(Instant updateAt) {
+        UpdateAt = updateAt;
+    }
+
+    public String getUpdateBy() {
+        return UpdateBy;
+    }
+
+    public void setUpdateBy(String updateBy) {
+        UpdateBy = updateBy;
     }
 
 }
